@@ -176,7 +176,9 @@ public class ShortenURL {
 			String longurl = "";
 			String shorturl = "";
 			int id = 0;
-			ShortenURL surl = new ShortenURL("www.bitly.com/");
+			System.out.println("Enter domain for the shortened urls: ");
+			String domain = sc.nextLine();
+			ShortenURL surl = new ShortenURL(domain);
 
 			if(choice.equalsIgnoreCase("shorten")){
 				System.out.println("Enter URL to shorten: ");
