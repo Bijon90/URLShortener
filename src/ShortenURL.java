@@ -10,6 +10,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Scanner;
 
+import org.cinchapi.concourse.Concourse;
+import org.cinchapi.concourse.ConnectionPool;
+import org.cinchapi.concourse.thrift.*;
+
 /**
  * Constructor for ShortenURL to initialize charSet for generating short urls
  *
@@ -18,6 +22,7 @@ public class ShortenURL {
 
 	private char charSet[];
 	private String domain;
+	private final Concourse concourse = Concourse.connect();
 
 	public ShortenURL() {
 		domain = "";
@@ -33,6 +38,7 @@ public class ShortenURL {
 			}
 			charSet[i] = (char) j;
 		}
+		//		concourse = CreateConnectionMySQL.CONCOURSE_CONNECTIONS.request();
 	}
 
 	/**
@@ -120,20 +126,9 @@ public class ShortenURL {
 	 * @param shortURL
 	 */
 	public void insertToDB(int id, String longURL, String shortURL){
-		CreateConnectionMySQL dbConn = new CreateConnectionMySQL();
-		PreparedStatement preparedStatement = null;
-		Connection con = dbConn.createConn();
+		concourse.set("longurl", longURL, id);
+		concourse.set("shorturl",shortURL , id);
 
-		try {
-			preparedStatement = con.prepareStatement("insert into  url.url values (?, ?, ?)");
-			preparedStatement.setInt(1, id);
-			preparedStatement.setString(2, longURL);
-			preparedStatement.setString(3, shortURL);
-			preparedStatement.executeUpdate();
-			con.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -142,25 +137,10 @@ public class ShortenURL {
 	 * @return expanded long url
 	 */
 	public String retrieveFromDB(String shortURL){
-		CreateConnectionMySQL dbConn = new CreateConnectionMySQL();
-		PreparedStatement preparedStatement = null;
-		ResultSet rs = null;
-		Connection con = dbConn.createConn();
 		int id = decodeURL(shortURL);
 		String longurl = "";
-
-		try {
-			preparedStatement = con.prepareStatement("SELECT longurl from url.url where id = ?");
-			preparedStatement.setInt(1, id);
-			rs = preparedStatement.executeQuery();
-			while (rs.next()) {
-				longurl = rs.getString("LONGURL");
-			}
-			System.out.println("LongURL: "+longurl);
-			con.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		longurl = concourse.get("longurl", id);
+		System.out.println("LongURL: "+longurl);
 		return longurl;
 	}
 
@@ -170,26 +150,8 @@ public class ShortenURL {
 	 * @return null if record does not exist in database otherwise return already existing short url from database
 	 */
 	public String urlExists(int id){
-		CreateConnectionMySQL dbConn = new CreateConnectionMySQL();
-		PreparedStatement preparedStatement = null;
-		ResultSet rs = null;
-		Connection con = dbConn.createConn();
 		String shorturl = "";
-
-		try {
-			preparedStatement = con.prepareStatement("SELECT shorturl from url.url where id = ?");
-			preparedStatement.setInt(1, id);
-			rs = preparedStatement.executeQuery();
-			if(!rs.equals(null)){
-				while (rs.next()) {
-					shorturl = rs.getString("SHORTURL");
-				}
-			}
-			//System.out.println("LongURL: "+shorturl);
-			con.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		shorturl = concourse.get("shorturl",id);
 		return shorturl;
 	}
 
@@ -200,6 +162,10 @@ public class ShortenURL {
 	 */
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
+		//		ConnectionPool pool = ConnectionPool.newCachedConnectionPool("localhost", 1717, "admin", "admin");
+		//		Concourse concourse = null;
+		//		try{
+		//			concourse = pool.request();
 		String cont = "Y";
 		do{
 			System.out.println("Do you want to shorten a URL or expand a short URL?");
@@ -246,5 +212,10 @@ public class ShortenURL {
 		System.out.println("Exit!");
 		sc.close();
 	}
+	//		finally{
+	//			if(concourse != null)
+	//				pool.release(concourse);
+	//		}
+	//	}
 
 }
