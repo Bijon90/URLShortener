@@ -5,9 +5,9 @@
 
 import java.util.Scanner;
 
-import org.cinchapi.concourse.Concourse;
-import org.cinchapi.concourse.ConnectionPool;
-import org.cinchapi.concourse.thrift.*;
+import com.cinchapi.concourse.Concourse;
+import com.cinchapi.concourse.ConnectionPool;
+import com.cinchapi.concourse.thrift.*;
 
 /**
  * Constructor for ShortenURL to initialize charSet for generating short urls
