@@ -3,6 +3,9 @@
  *
  */
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Scanner;
 import java.util.Set;
 
@@ -161,32 +164,53 @@ public class ShortenURL {
 	}
 
 	/**
+	 * Checks if a url string is valid or not
+	 * @param url
+	 * @return false if the url entered is not valid or malformed
+	 */
+	public boolean isValidURL(String url) {  
+		URL u = null;
+		try {  
+			u = new URL(url);  
+		} catch (MalformedURLException e) {  
+			return false;  
+		}
+		try {  
+			u.toURI();  
+		} catch (URISyntaxException e) {  
+			return false;  
+		}  
+		return true;  
+	} 
+
+	/**
 	 * Main method that provides the interface for the application. User can either opt to shorten an url or 
 	 * retrieve original longer one from database.
 	 * @param args
 	 */
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
-			String cont = "Y";
+		String cont = "Y";
+		do{
+			System.out.println("Do you want to shorten a URL or expand a short URL?");
+			String choice = "";
 			do{
-				System.out.println("Do you want to shorten a URL or expand a short URL?");
-				String choice = "";
-				do{
-					System.out.println("Enter shorten/expand?");
-					choice = sc.nextLine().trim();
-					if(!choice.equalsIgnoreCase("shorten") && !choice.equalsIgnoreCase("expand")){
-						System.out.println("Please enter shorten or expand!");
-					}
-				}while(!choice.equalsIgnoreCase("shorten") && !choice.equalsIgnoreCase("expand"));
-				System.out.println("Entered choice: "+choice);
-				String longurl = "";
-				String shorturl = "";
-				int id = 0;
-				ShortenURL surl = new ShortenURL("www.bitly.com/");
+				System.out.println("Enter shorten/expand?");
+				choice = sc.nextLine().trim();
+				if(!choice.equalsIgnoreCase("shorten") && !choice.equalsIgnoreCase("expand")){
+					System.out.println("Please enter shorten or expand!");
+				}
+			}while(!choice.equalsIgnoreCase("shorten") && !choice.equalsIgnoreCase("expand"));
+			System.out.println("Entered choice: "+choice);
+			String longurl = "";
+			String shorturl = "";
+			int id = 0;
+			ShortenURL surl = new ShortenURL("www.bitly.com/");
 
-				if(choice.equalsIgnoreCase("shorten")){
-					System.out.println("Enter URL to shorten: ");
-					longurl = sc.nextLine().trim();
+			if(choice.equalsIgnoreCase("shorten")){
+				System.out.println("Enter URL to shorten: ");
+				longurl = sc.nextLine().trim();
+				if(surl.isValidURL(longurl)){
 					id = generateId(longurl);
 					shorturl = surl.urlExists(id);
 					if(!shorturl.isEmpty())
@@ -198,22 +222,28 @@ public class ShortenURL {
 						System.out.println("Record inserted to Database!");
 					}
 					System.out.println("Id: "+ id + " LongURL: "+longurl +" Shortened URL:"+shorturl);
-
 				}
-				else if(choice.equalsIgnoreCase("expand")){
-					System.out.println("Enter URL to expand: ");
-					shorturl = sc.nextLine().trim();
-					id = surl.decodeURL(shorturl);
-					longurl = surl.retrieveFromDB(shorturl);
-					if(longurl.equals(null) || longurl.equals(""))
-						System.out.println("URL does not exist in database! Please try another.");
-					else
-						System.out.println("ShortURL: "+shorturl+" Id: "+id +" Expanded URL: "+longurl);
+				else{
+					do{
+						System.out.println("Please enter a valid url: ");
+						longurl = sc.nextLine();
+					}while(!surl.isValidURL(longurl));
 				}
-				System.out.println("Do you want to continue(Y/N): ");
-				cont = sc.nextLine().trim();
-			}while(cont.equalsIgnoreCase("Y"));
-			System.out.println("Exit!");
-			sc.close();
+			}
+			else if(choice.equalsIgnoreCase("expand")){
+				System.out.println("Enter URL to expand: ");
+				shorturl = sc.nextLine().trim();
+				id = surl.decodeURL(shorturl);
+				longurl = surl.retrieveFromDB(shorturl);
+				if(longurl.equals(null) || longurl.equals(""))
+					System.out.println("URL does not exist in database! Please try another.");
+				else
+					System.out.println("ShortURL: "+shorturl+" Id: "+id +" Expanded URL: "+longurl);
+			}
+			System.out.println("Do you want to continue(Y/N): ");
+			cont = sc.nextLine().trim();
+		}while(cont.equalsIgnoreCase("Y"));
+		System.out.println("Exit!");
+		sc.close();
 	}
 }
