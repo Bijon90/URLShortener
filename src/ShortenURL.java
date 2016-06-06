@@ -4,10 +4,11 @@
  */
 
 import java.util.Scanner;
+import java.util.Set;
 
+import com.cinchapi.*;
 import com.cinchapi.concourse.Concourse;
 import com.cinchapi.concourse.ConnectionPool;
-import com.cinchapi.concourse.thrift.*;
 
 /**
  * Constructor for ShortenURL to initialize charSet for generating short urls
@@ -33,7 +34,6 @@ public class ShortenURL {
 			}
 			charSet[i] = (char) j;
 		}
-		//		concourse = CreateConnectionMySQL.CONCOURSE_CONNECTIONS.request();
 	}
 
 	/**
@@ -121,8 +121,8 @@ public class ShortenURL {
 	 * @param shortURL
 	 */
 	public void insertToDB(int id, String longURL, String shortURL){
-		concourse.set("longurl", longURL, id);
-		concourse.set("shorturl",shortURL , id);
+		concourse.add("longurl", longURL, id);
+		concourse.add("shorturl",shortURL , id);
 
 	}
 
@@ -146,7 +146,17 @@ public class ShortenURL {
 	 */
 	public String urlExists(int id){
 		String shorturl = "";
-		shorturl = concourse.get("shorturl",id);
+		Object url;
+		try{
+			url = concourse.get("shorturl",id);
+			if(url == null)
+				shorturl ="";
+			else{
+				shorturl = url.toString();
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 		return shorturl;
 	}
 
@@ -157,62 +167,53 @@ public class ShortenURL {
 	 */
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
-		//		ConnectionPool pool = ConnectionPool.newCachedConnectionPool("localhost", 1717, "admin", "admin");
-		//		Concourse concourse = null;
-		//		try{
-		//			concourse = pool.request();
-		String cont = "Y";
-		do{
-			System.out.println("Do you want to shorten a URL or expand a short URL?");
-			String choice = "";
+			String cont = "Y";
 			do{
-				System.out.println("Enter shorten/expand?");
-				choice = sc.nextLine().trim();
-				if(!choice.equalsIgnoreCase("shorten") && !choice.equalsIgnoreCase("expand")){
-					System.out.println("Please enter shorten or expand!");
-				}
-			}while(!choice.equalsIgnoreCase("shorten") && !choice.equalsIgnoreCase("expand"));
-			System.out.println("Entered choice: "+choice);
-			String longurl = "";
-			String shorturl = "";
-			int id = 0;
-			System.out.println("Enter domain for the shortened urls: ");
-			String domain = sc.nextLine();
-			ShortenURL surl = new ShortenURL(domain);
+				System.out.println("Do you want to shorten a URL or expand a short URL?");
+				String choice = "";
+				do{
+					System.out.println("Enter shorten/expand?");
+					choice = sc.nextLine().trim();
+					if(!choice.equalsIgnoreCase("shorten") && !choice.equalsIgnoreCase("expand")){
+						System.out.println("Please enter shorten or expand!");
+					}
+				}while(!choice.equalsIgnoreCase("shorten") && !choice.equalsIgnoreCase("expand"));
+				System.out.println("Entered choice: "+choice);
+				String longurl = "";
+				String shorturl = "";
+				int id = 0;
+				ShortenURL surl = new ShortenURL("www.bitly.com/");
 
-			if(choice.equalsIgnoreCase("shorten")){
-				System.out.println("Enter URL to shorten: ");
-				longurl = sc.nextLine().trim();
-				id = generateId(longurl);
-				shorturl = surl.urlExists(id);
-				if(shorturl.equals(null) || shorturl.equals("")){
-					shorturl = surl.encodeURL(id, longurl);
-					surl.insertToDB(id, longurl, shorturl);
-					System.out.println("Record inserted to Database!");
-				}
-				System.out.println("Id: "+ id + " LongURL: "+longurl +" Shortened URL: "+shorturl);
+				if(choice.equalsIgnoreCase("shorten")){
+					System.out.println("Enter URL to shorten: ");
+					longurl = sc.nextLine().trim();
+					id = generateId(longurl);
+					shorturl = surl.urlExists(id);
+					if(!shorturl.isEmpty())
+						System.out.println("Record already exists!");
+					else if(shorturl.equals(null) || shorturl.equals("") || shorturl.isEmpty()){
+						System.out.println("Inserting record to DB...");
+						shorturl = surl.encodeURL(id, longurl);
+						surl.insertToDB(id, longurl, shorturl);
+						System.out.println("Record inserted to Database!");
+					}
+					System.out.println("Id: "+ id + " LongURL: "+longurl +" Shortened URL:"+shorturl);
 
-			}
-			else if(choice.equalsIgnoreCase("expand")){
-				System.out.println("Enter URL to expand: ");
-				shorturl = sc.nextLine().trim();
-				id = surl.decodeURL(shorturl);
-				longurl = surl.retrieveFromDB(shorturl);
-				if(longurl.equals(null) || longurl.equals(""))
-					System.out.println("URL does not exist in database! Please try another.");
-				else
-					System.out.println("ShortURL: "+shorturl+" Id: "+id +" Expanded URL: "+longurl);
-			}
-			System.out.println("Do you want to continue(Y/N): ");
-			cont = sc.nextLine().trim();
-		}while(cont.equalsIgnoreCase("Y"));
-		System.out.println("Exit!");
-		sc.close();
+				}
+				else if(choice.equalsIgnoreCase("expand")){
+					System.out.println("Enter URL to expand: ");
+					shorturl = sc.nextLine().trim();
+					id = surl.decodeURL(shorturl);
+					longurl = surl.retrieveFromDB(shorturl);
+					if(longurl.equals(null) || longurl.equals(""))
+						System.out.println("URL does not exist in database! Please try another.");
+					else
+						System.out.println("ShortURL: "+shorturl+" Id: "+id +" Expanded URL: "+longurl);
+				}
+				System.out.println("Do you want to continue(Y/N): ");
+				cont = sc.nextLine().trim();
+			}while(cont.equalsIgnoreCase("Y"));
+			System.out.println("Exit!");
+			sc.close();
 	}
-	//		finally{
-	//			if(concourse != null)
-	//				pool.release(concourse);
-	//		}
-	//	}
-
 }
